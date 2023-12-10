@@ -2,9 +2,16 @@ import cv2
 import os
 import time
 
-cam = cv2.VideoCapture(0)
+def create_folder(folder_path):
+    if not os.path.exists(folder_path):
+        os.makedirs(folder_path)
 
-# cv2.namedWindow("Sample")
+folder_name = input("Enter the name of the folder to save images: ")
+folder_path = os.path.join(r'D:\\Model\\face_recognition\\Dataset\\FaceData\\raw', folder_name)
+
+create_folder(folder_path)
+
+cam = cv2.VideoCapture(0)
 
 img_counter = 0
 max_pictures = 50
@@ -22,8 +29,7 @@ while img_counter < max_pictures:
         break
 
     img_name = "{}.png".format(img_counter)
-    path = 'D:\\Model\\face_recognition\\Dataset\\FaceData\\raw\\Tri'
-    cv2.imwrite(os.path.join(path, img_name), frame)
+    cv2.imwrite(os.path.join(folder_path, img_name), frame)
     print("{} written!".format(img_name))
     img_counter += 1
 

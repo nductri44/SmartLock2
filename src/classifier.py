@@ -1,4 +1,4 @@
-# python src/classifier.py TRAIN Dataset/FaceData/processed Models/20180402-114759.pb Models/facemodel.pkl --batch_size 1000
+# python src/classifier.py TRAIN Dataset/FaceData/processed Models/20180402-114759.pb Models/facemodel.pkl --batch_size 71
 
 from __future__ import absolute_import
 from __future__ import division
@@ -132,15 +132,15 @@ def parse_arguments(argv):
     parser.add_argument('--test_data_dir', type=str,
         help='Path to the test data directory containing aligned images used for testing.')
     parser.add_argument('--batch_size', type=int,
-        help='Number of images to process in a batch.', default=90)
+        help='Number of images to process in a batch.', default=18)
     parser.add_argument('--image_size', type=int,
         help='Image size (height, width) in pixels.', default=160)
     parser.add_argument('--seed', type=int,
         help='Random seed.', default=666)
     parser.add_argument('--min_nrof_images_per_class', type=int,
-        help='Only include classes with at least this number of images in the dataset', default=20)
+        help='Only include classes with at least this number of images in the dataset', default=90)
     parser.add_argument('--nrof_train_images_per_class', type=int,
-        help='Use this number of images from each class for training and the rest for testing', default=10)
+        help='Use this number of images from each class for training and the rest for testing', default=85)
     
     return parser.parse_args(argv)
 

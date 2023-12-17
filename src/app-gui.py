@@ -2,6 +2,7 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
+import customtkinter
 import tensorflow as tf
 from imutils.video import VideoStream
 import argparse
@@ -20,10 +21,13 @@ from firebase_admin import credentials, db
 cred = credentials.Certificate("D:\\Model\\face_recognition\\serviceAccountKey.json")
 firebase_admin.initialize_app(cred, {'databaseURL': 'https://facerecognition-49c2d-default-rtdb.asia-southeast1.firebasedatabase.app/'})
 
-positive_ref = db.reference('/face_positive')
-negative_ref = db.reference('/face_negative')
+positive_face_ref = db.reference('/face_positive')
+negative_face_ref = db.reference('/face_negative')
 
-while True:
+
+def face_recognition():
+    print("Face Recognition Mode")
+
     parser = argparse.ArgumentParser()
     parser.add_argument('--path', help='Path of the video you want to test on.', default=0)
 
@@ -97,11 +101,10 @@ while True:
                                 best_name = class_names[best_class_indices[0]]
                                 print("Name: {}, Probability: {}".format(best_name, best_class_probabilities))
 
-
                                 if best_class_probabilities > 0.8:
                                     probability_value = float(best_class_probabilities[0])
                                     date_time = datetime.now().strftime("%d%m%Y%H%M%S")
-                                    positive_ref.push({
+                                    positive_face_ref.push({
                                         'Name': str(best_name),
                                         'Probability': '{:.4f}'.format(probability_value),
                                         'Detected_at': datetime.now().strftime("%d/%m/%Y, %H:%M:%S"),
@@ -122,10 +125,14 @@ while True:
                                                 1, (255, 255, 255), thickness=1, lineType=2)
                                     person_detected[best_name] += 1
 
+                                    welcome_text = f"Welcome {name}"
+                                    welcome_label.config(text=welcome_text)
+                                    app.update()
+
                                 elif best_class_probabilities < 0.35:
                                     probability_value = float(best_class_probabilities[0])
                                     date_time = datetime.now().strftime("%d%m%Y%H%M%S")
-                                    negative_ref.push({
+                                    negative_face_ref.push({
                                         'Name': 'Unknown',
                                         'Probability': '{:.4f}'.format(probability_value),
                                         'Detected_at': datetime.now().strftime("%d/%m/%Y, %H:%M:%S"),
@@ -133,6 +140,18 @@ while True:
                                     })
                                     image_path = 'D:\\Model\\flask_demo\\pythonlogin\\static\\face_images\\negative\\{}.jpg'.format(date_time)
                                     cv2.imwrite(image_path, frame)
+                                    cv2.rectangle(frame, (bb[i][0], bb[i][1]), (bb[i][2], bb[i][3]), (0, 255, 0), 2)
+                                    text_x = bb[i][0]
+                                    text_y = bb[i][3] + 20
+
+                                    name = class_names[best_class_indices[0]]
+                                    cv2.putText(frame, name, (text_x, text_y), cv2.FONT_HERSHEY_COMPLEX_SMALL,
+                                                1, (255, 255, 255), thickness=1, lineType=2)
+                                    cv2.putText(frame, str(round(best_class_probabilities[0], 3)), (text_x, text_y + 17),
+                                                cv2.FONT_HERSHEY_COMPLEX_SMALL,
+                                                1, (255, 255, 255), thickness=1, lineType=2)
+                                    person_detected[best_name] += 1
+
                                 else:
                                     name = "Unknown"
 
@@ -143,5 +162,18 @@ while True:
                 if cv2.waitKey(1) & 0xFF == ord('q'):
                     break
 
-            cap.release()
-            cv2.destroyAllWindows()
+
+app = customtkinter.CTk()
+app.title("my app")
+app.geometry("600x300")
+app.grid_columnconfigure(0, weight=1)
+
+
+welcome_label = customtkinter.CTkLabel(app, text="", font=("Helvetica", 16))
+welcome_label.grid(row=0, column=0, pady=10, padx=10)
+
+button1 = customtkinter.CTkButton(app, text="Face ID", height=50, command=face_recognition)
+button1.grid(row=1, column=0, pady=10, padx=10)
+
+
+app.mainloop()

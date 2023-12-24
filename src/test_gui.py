@@ -349,6 +349,7 @@ class PageTakeFace(tk.Frame):
             widget.grid_configure(padx=10, pady=5)
 
 
+# Face Recognition part
 
 MINSIZE = 20
 THRESHOLD = [0.6, 0.7, 0.7]
@@ -458,7 +459,6 @@ class PageDetectFace(tk.Frame):
                                 detect_time += 1
                             else:
                                 print('Unknown')
-
 
 
         def start_check_in():

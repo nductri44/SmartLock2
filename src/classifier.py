@@ -1,4 +1,4 @@
-# python src/classifier.py TRAIN Dataset/FaceData/processed Models/20180402-114759.pb Models/facemodel.pkl --batch_size 71
+# python src/classifier.py TRAIN Dataset/FaceData/processed Models/20180402-114759.pb Models/facemodel.pkl --batch_size 18 --min_nrof_images_per_class 90 --nrof_train_images_per_class 85
 
 from __future__ import absolute_import
 from __future__ import division

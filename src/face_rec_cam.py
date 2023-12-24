@@ -61,7 +61,7 @@ while True:
             while (True):
                 frame = cap.read()
                 frame = imutils.resize(frame, width=600)
-                frame = cv2.flip(frame, 1)
+                # frame = cv2.flip(frame, 1)
 
                 bounding_boxes, _ = align.detect_face.detect_face(frame, MINSIZE, pnet, rnet, onet, THRESHOLD, FACTOR)
 

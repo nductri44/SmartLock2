@@ -5,19 +5,30 @@ from tkinter import messagebox, PhotoImage
 from PIL import Image, ImageTk
 import cv2
 import os
-import imutils
 import pytz
+import imutils
+import time
+import serial
+import adafruit_fingerprint
+import RPi.GPIO as GPIO
 
-from imutils.video import VideoStream
 import align.detect_face
 import facenet
 import tensorflow as tf
 import numpy as np
 
 
+RELAY_PIN = 23
+
+GPIO.setwarnings(False)
+GPIO.setmode(GPIO.BCM)
+GPIO.setup(RELAY_PIN, GPIO.OUT)
+
 names = set()
 utc = pytz.UTC
 
+uart = serial.Serial("/dev/ttyS0", baudrate=57600, timeout=1)
+finger = adafruit_fingerprint.Adafruit_Fingerprint(uart)
 
 class MainUI(tk.Tk):
 
@@ -31,8 +42,7 @@ class MainUI(tk.Tk):
             z = x.rstrip().split(" ")
             for i in z:
                 names.add(i)
-        self.title_font = tkfont.Font(
-            family='Helvetica', size=16, weight="bold")
+        self.title_font = tkfont.Font(family='Helvetica', size=16, weight="bold")
         self.title("Face Recognizer")
         self.resizable(False, False)
         app_width = 1200
@@ -51,7 +61,7 @@ class MainUI(tk.Tk):
         container.grid_rowconfigure(0, weight=1)
         container.grid_columnconfigure(0, weight=1)
         self.frames = {}
-        for F in (StartPage, PageOne, PageTwo, PageFour, PageTakeFace, PageDetectFace):
+        for F in (StartPage, PageOne, PageTwo, PageThree, PageFour, PageDetectFinger, PageTakeFace, PageDetectFace):
             page_name = F.__name__
             frame = F(parent=container, controller=self)
             self.frames[page_name] = frame
@@ -80,24 +90,20 @@ class StartPage(tk.Frame):
         render1 = ImageTk.PhotoImage(Image.open(
             "src/Touch_ID.png").resize((250, 250), Image.ANTIALIAS))
 
-        button4 = tk.Button(
-            self, image=render1, command=lambda: self.controller.show_frame("PageTwo"))
+        button4 = tk.Button(self, image=render1, command=lambda: self.controller.show_frame("PageTwo"))
         button4.image = render1
-        button4.grid(row=0, column=0, rowspan=4,
-                     padx=10, pady=12, sticky="nsew")
+        button4.grid(row=0, column=0, rowspan=4, padx=10, pady=12, sticky="nsew")
 
         load2 = Image.open("src/face-id-id.png")
-        load2 = load2.resize((50, 50), Image.ANTIALIAS)
+        load2 = load2.resize((50, 50), Image.ANTIALIAS)        
         render2 = PhotoImage(file='src/face-id-id.png')
-
+        
         render2 = ImageTk.PhotoImage(Image.open(
             "src/face-id-id.png").resize((250, 250), Image.ANTIALIAS))
 
-        button5 = tk.Button(
-            self, image=render2, command=lambda: self.controller.show_frame("PageOne"))
+        button5 = tk.Button(self, image=render2, command=lambda: self.controller.show_frame("PageOne"))
         button5.image = render2
-        button5.grid(row=1, column=1, rowspan=4,
-                     padx=10, pady=12, sticky="nsew")
+        button5.grid(row=1, column=1, rowspan=4, padx=10, pady=12, sticky="nsew")
 
     def on_closing(self):
         if messagebox.askokcancel("Quit", "Are you sure?"):
@@ -109,11 +115,11 @@ class PageOne(tk.Frame):
         tk.Frame.__init__(self, parent)
         self.controller = controller
 
-        color1 = '#020f12'
+        # color1 = '#020f12'
         color2 = '#05d7ff'
         color3 = '#65e7ff'
         color4 = 'BLACK'
-        color5 = 'YELLOW'
+        # color5 = 'YELLOW'
         self.buttoncanc = tk.Button(self,
                                     background=color2,
                                     foreground=color4,
@@ -141,7 +147,7 @@ class PageOne(tk.Frame):
                                         height=2,
                                         border=0,
                                         cursor='hand2',
-                                        text="Add new",
+                                        text="Add new face",
                                         font=('Arial', 16, 'bold'), command=lambda: controller.show_frame("PageTakeFace"))
         self.buttonTakeFace.place(relx=0.5, rely=0.3, anchor='center')
 
@@ -156,7 +162,7 @@ class PageOne(tk.Frame):
                                         height=2,
                                         border=0,
                                         cursor='hand2',
-                                        text="Detect",
+                                        text="Detect Face",
                                         font=('Arial', 16, 'bold'), command=lambda: controller.show_frame("PageDetectFace"))
         self.buttonTakeFace.place(relx=0.5, rely=0.1, anchor='center')
 
@@ -166,11 +172,11 @@ class PageTwo(tk.Frame):
         tk.Frame.__init__(self, parent)
         self.controller = controller
 
-        color1 = '#020f12'
+        # color1 = '#020f12'
         color2 = '#05d7ff'
         color3 = '#65e7ff'
         color4 = 'BLACK'
-        color5 = 'YELLOW'
+        # color5 = 'YELLOW'
 
         self.buttoncanc = tk.Button(self,
                                     background=color2,
@@ -220,6 +226,188 @@ class PageTwo(tk.Frame):
 
 
 
+class PageThree(tk.Frame):
+
+    global message
+    message = False
+
+    def __init__(self, parent, controller):
+        tk.Frame.__init__(self, parent)
+        global names
+        self.controller = controller
+
+        def enroll_finger(location):
+            for fingerimg in range(1, 3):
+                if fingerimg == 1:
+                    print("Place finger on sensor...", end="")
+                else:
+                    print("Place same finger again...", end="")
+
+                while True:
+                    i = finger.get_image()
+                    if i == adafruit_fingerprint.OK:
+                        print("Image taken")
+                        break
+                    if i == adafruit_fingerprint.NOFINGER:
+                        print(".", end="")
+                    elif i == adafruit_fingerprint.IMAGEFAIL:
+                        print("Imaging error")
+                        return False
+                    else:
+                        print("Other error")
+                        return False
+
+                print("Templating...", end="")
+                i = finger.image_2_tz(fingerimg)
+                if i == adafruit_fingerprint.OK:
+                    print("Templated")
+                else:
+                    if i == adafruit_fingerprint.IMAGEMESS:
+                        print("Image too messy")
+                    elif i == adafruit_fingerprint.FEATUREFAIL:
+                        print("Could not identify features")
+                    elif i == adafruit_fingerprint.INVALIDIMAGE:
+                        print("Image invalid")
+                    else:
+                        print("Other error")
+                    return False
+
+                if fingerimg == 1:
+                    print("Remove finger")
+                    time.sleep(1)
+                    while i != adafruit_fingerprint.NOFINGER:
+                        i = finger.get_image()
+
+            print("Creating model...", end="")
+            i = finger.create_model()
+            if i == adafruit_fingerprint.OK:
+                print("Created")
+            else:
+                if i == adafruit_fingerprint.ENROLLMISMATCH:
+                    print("Prints did not match")
+                else:
+                    print("Other error")
+                return False
+
+            print("Storing model #%d..." % location, end="")
+            i = finger.store_model(location)
+            if i == adafruit_fingerprint.OK:
+                print("Stored")
+            else:
+                if i == adafruit_fingerprint.BADLOCATION:
+                    print("Bad storage location")
+                elif i == adafruit_fingerprint.FLASHERR:
+                    print("Flash storage error")
+                else:
+                    print("Other error")
+                return False
+
+            return True
+        
+        def get_num(max_number):
+            i = -1
+            while (i > max_number - 1) or (i < 0):
+                try:
+                    i = int(input("Enter ID # from 0-{}: ".format(max_number - 1)))
+                except ValueError:
+                    pass
+            return i
+
+        def start_enroll():
+            stop_enroll()
+            global message
+            message == True
+            enroll_finger(get_num(finger.library_size))
+
+
+        def stop_enroll():
+            global message
+            message == False
+
+        label1 = tk.Label(
+            self, text="Enter your student code to register new fingerprint")
+        label1.place(relx=0.5, rely=0.1, anchor='center')
+
+        student_code_entry = tk.Entry(self)
+        student_code_entry.place(relx=0.5, rely=0.2, anchor='center')
+
+        buttoncanc2 = tk.Button(self, text="Enroll Fingerprint", bg="#ffffff",
+                                fg="#263942", command=start_enroll)
+        buttoncanc2.place(relx=0.5, rely=0.3, anchor='center')
+
+        self.notify = tk.Label(
+            self, text="", foreground='green',)
+        self.notify.place(relx=0.5, rely=0.4, anchor='center')
+
+        buttoncanc1 = tk.Button(self, text="Cancel", bg="#ffffff",
+                                fg="#263942", command=lambda: controller.show_frame("StartPage"))
+        buttoncanc1.place(relx=0.5, rely=0.5, anchor='center')
+
+
+class PageDetectFinger(tk.Frame):
+
+    global message
+    message = False
+
+    def __init__(self, parent, controller):
+        tk.Frame.__init__(self, parent)
+        global names
+        global status
+        status = 'loading'
+        self.controller = controller
+
+        def get_fingerprint():
+            print("Waiting for image...")
+            while finger.get_image() != adafruit_fingerprint.OK:
+                pass
+            print("Templating...")
+            if finger.image_2_tz(1) != adafruit_fingerprint.OK:
+                return False
+            print("Searching...")
+            if finger.finger_search() != adafruit_fingerprint.OK:
+                return False
+            
+            return True
+        
+        def detect_finger():
+            if get_fingerprint():
+                print("Detected #", finger.finger_id, "with confidence", finger.confidence)
+                print("Turning on...")
+                GPIO.output(RELAY_PIN, 1)
+                time.sleep(5)
+                print("Turning off...")
+                GPIO.output(RELAY_PIN, 0)
+            else:
+                print("Finger not found")
+
+
+        # finger checkin
+        def start_check_in():
+            stop_detect()
+            global status
+            status = 'Init Parameters'
+            print(status)
+            global message
+            message == True
+            detect_finger()
+           
+
+        def stop_detect():
+            global message
+            message == False
+
+        buttoncanc2 = tk.Button(self, text="Finger Check In", bg="#ffffff",
+                                fg="#263942", command=start_check_in)
+        buttoncanc2.place(relx=0.5, rely=0.2, anchor='center')
+
+        self.notify1 = tk.Label(self, text=status)
+        self.notify1.place(relx=0.5, rely=0.4, anchor='center')
+
+        buttoncanc1 = tk.Button(self, text="Cancel", bg="#ffffff",
+                                fg="#263942", command=lambda: controller.show_frame("StartPage"))
+        buttoncanc1.place(relx=0.5, rely=0.5, anchor='center')
+
+
 class PageFour(tk.Frame):
 
     def __init__(self, parent, controller):
@@ -247,7 +435,7 @@ class PageTakeFace(tk.Frame):
             detector = cv2.CascadeClassifier(
                 "src/haarcascade_frontalface_default.xml")
 
-            id = stundent_id_entry.get()
+            id = first_name_entry.get()
 
             filepath = 'src/raw/' + id
 
@@ -276,7 +464,6 @@ class PageTakeFace(tk.Frame):
                                     cv2.FONT_HERSHEY_SIMPLEX, 0.8, (8, 238, 255))
                         cv2.putText(frame, str(str(num_of_images)+" images captured"),
                                     (x, y+h+20), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (8, 238, 255))
-                        # new_img = frame[y:y+h, x:x+w]
 
                     # Capture the latest frame and transform to image
                     captured_image = Image.fromarray(
@@ -308,7 +495,7 @@ class PageTakeFace(tk.Frame):
             global cam_on, cap
             stop_vid()
             cam_on = True
-            cap = cv2.VideoCapture(1)
+            cap = cv2.VideoCapture(0)
             display_frame()
 
         def stop_vid():
@@ -325,14 +512,10 @@ class PageTakeFace(tk.Frame):
         user_info_frame.grid(row=0, column=0, padx=20, pady=10)
 
         first_name_label = tk.Label(user_info_frame, text="Your Name")
-        first_name_label.grid(row=0, column=0)
-        student_id_label = tk.Label(user_info_frame, text="Your Student Id")
-        student_id_label.grid(row=0, column=1)
+        first_name_label.grid(row=0, column=0, columnspan=2)
 
-        first_name_entry = tk.Entry(user_info_frame)
-        stundent_id_entry = tk.Entry(user_info_frame)
-        first_name_entry.grid(row=1, column=0)
-        stundent_id_entry.grid(row=1, column=1)
+        first_name_entry = tk.Entry(user_info_frame, width=50)
+        first_name_entry.grid(row=1, column=0, columnspan=2)
 
         buttoncanc = tk.Button(user_info_frame, text="Cancel", bg="#ffffff",
                                fg="#263942", command=lambda: controller.show_frame("StartPage"))
@@ -366,6 +549,7 @@ with tf.Graph().as_default():
     # Cai dat GPU neu co
     gpu_options = tf.compat.v1.GPUOptions(
         per_process_gpu_memory_fraction=0.6)
+    
     sess = tf.compat.v1.Session(config=tf.compat.v1.ConfigProto(
         gpu_options=gpu_options, log_device_placement=False))
 
@@ -397,10 +581,8 @@ class PageDetectFace(tk.Frame):
         count_unknown = 0
         global detect_time
         detect_time = 0
-        global mode
-        mode = 1
 
-
+        
         def detect_frame():
             global cam_detect_on
             global count_unknown
@@ -411,7 +593,9 @@ class PageDetectFace(tk.Frame):
                 if ret:
                     frame = imutils.resize(frame, width=600)
                     frame = cv2.flip(frame, 1)
-                    bounding_boxes, _ = align.detect_face.detect_face(frame, MINSIZE, pnet, rnet, onet, THRESHOLD, FACTOR)
+                    bounding_boxes, _ = align.detect_face.detect_face(
+                        frame, MINSIZE, pnet, rnet, onet, THRESHOLD, FACTOR)
+                    
                     faces_found = bounding_boxes.shape[0]
 
                     det = bounding_boxes[:, 0:4]
@@ -444,7 +628,7 @@ class PageDetectFace(tk.Frame):
                             best_name = class_names[best_class_indices[0]]
 
                             count_unknown += 1
-                            if best_class_probabilities > 0.8:
+                            if best_class_probabilities > 0.7:
                                 print('Name: {}, Probability: {}'.format(
                                     best_name, best_class_probabilities))
                                 cv2.rectangle(frame, (bb[i][0], bb[i][1]), (bb[i][2], bb[i][3]), (0,
@@ -454,21 +638,52 @@ class PageDetectFace(tk.Frame):
                                 text_y = bb[i][3] + 20
                                 cv2.putText(frame, best_name, (text_x, text_y), (cv2.FONT_HERSHEY_COMPLEX_SMALL), 1,
                                             (255, 255, 255), thickness=1, lineType=2)
-                                cv2.putText(frame, (str(round(best_class_probabilities[0], 3))), (text_x, text_y + 17), (cv2.FONT_HERSHEY_COMPLEX_SMALL),
-                                            1, (255, 255, 255), thickness=1, lineType=2)
+                                cv2.putText(frame, (str(round(best_class_probabilities[0], 3))), (text_x, text_y + 17), 
+                                            (cv2.FONT_HERSHEY_COMPLEX_SMALL), 1, (255, 255, 255), thickness=1, lineType=2)
+                                if detect_time == 1:
+                                    cv2.destroyAllWindows()
+                                    time.sleep(5)
+                                    messagebox.showinfo("Welcome", "Welcome home!")
+                                    stop_detect()
+                                    detect_time = 0
+                                    return best_name
                                 detect_time += 1
                             else:
-                                print('Unknown')
+                                print('Name: {}, Probability: {}'.format(
+                                    best_name, best_class_probabilities))
+                                print(count_unknown)
+                                if count_unknown == 100:
+                                    print('break')
+                                    # best_name = 'unknown'
+                                    cv2.destroyAllWindows()
+                                    stop_detect()
+                                    count_unknown = 0
+                                    return best_name
 
+                    # Capture the latest frame and transform to image
+                    captured_image = Image.fromarray(
+                        cv2.cvtColor(frame, cv2.COLOR_BGR2RGBA))
+
+                    # Convert captured image to photoimage
+                    photo_image = ImageTk.PhotoImage(
+                        captured_image.resize((500, 300), Image.ANTIALIAS))
+
+                    # Displaying photoimage in the label
+                    detect_widget.photo_image = photo_image
+
+                    # Configure image in the label
+                    detect_widget.configure(image=photo_image)
+
+                detect_widget.after(10, detect_frame)
 
         def start_check_in():
-            global cam_detect_on, cap_detect, mode
+            global cam_detect_on, cap_detect
             stop_detect()
             cam_detect_on = True
-            cap_detect = cv2.VideoCapture(1)
-            mode = 1
+            cap_detect = cv2.VideoCapture(0)
             detect_frame()
 
+        
         def stop_detect():
             detect_widget.configure(image=None)
             detect_widget.configure(image="")

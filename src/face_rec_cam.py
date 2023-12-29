@@ -3,7 +3,6 @@ from __future__ import division
 from __future__ import print_function
 
 import tensorflow as tf
-from imutils.video import VideoStream
 import argparse
 import facenet
 import imutils
@@ -56,10 +55,10 @@ while True:
 
             person_detected = collections.Counter()
 
-            cap = VideoStream(src=0).start()
+            cap = cv2.VideoCapture(0)
 
             while (True):
-                frame = cap.read()
+                ret, frame = cap.read()
                 frame = imutils.resize(frame, width=600)
                 # frame = cv2.flip(frame, 1)
 

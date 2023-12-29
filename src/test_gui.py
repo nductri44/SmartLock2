@@ -61,7 +61,7 @@ class MainUI(tk.Tk):
         container.grid_rowconfigure(0, weight=1)
         container.grid_columnconfigure(0, weight=1)
         self.frames = {}
-        for F in (StartPage, PageOne, PageTwo, PageThree, PageFour, PageDetectFinger, PageTakeFace, PageDetectFace):
+        for F in (StartPage, PageOne, PageTwo, PageTakeFinger, PageFour, PageDetectFinger, PageTakeFace, PageDetectFace):
             page_name = F.__name__
             frame = F(parent=container, controller=self)
             self.frames[page_name] = frame
@@ -226,7 +226,7 @@ class PageTwo(tk.Frame):
 
 
 
-class PageThree(tk.Frame):
+class PageTakeFinger(tk.Frame):
 
     global message
     message = False

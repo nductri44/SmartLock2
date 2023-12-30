@@ -3,7 +3,7 @@ from __future__ import division
 from __future__ import print_function
 
 import tensorflow as tf
-
+from imutils.video import VideoStream
 import argparse
 import facenet
 import imutils
@@ -12,18 +12,8 @@ import align.detect_face
 import numpy as np
 import cv2
 import collections
-import time
 
-import firebase_admin
-from firebase_admin import credentials, db
-
-cred = credentials.Certificate("D:\\Model\\face_recognition\\serviceAccountKey.json")
-firebase_admin.initialize_app(cred, {'databaseURL': 'https://facerecognition-49c2d-default-rtdb.asia-southeast1.firebasedatabase.app/'})
-
-
-ref = db.reference('/face_recognition')
-
-def main():
+while True:
     parser = argparse.ArgumentParser()
     parser.add_argument('--path', help='Path of the video you want to test on.', default=0)
 
@@ -34,24 +24,20 @@ def main():
     CLASSIFIER_PATH = 'Models/facemodel.pkl'
     FACENET_MODEL_PATH = 'Models/20180402-114759.pb'
 
-    # Load The Custom Classifier
     with open(CLASSIFIER_PATH, 'rb') as file:
         model, class_names = pickle.load(file)
     print("Custom Classifier, Successfully loaded")
 
     with tf.Graph().as_default():
 
-        # Cai dat GPU neu co
         gpu_options = tf.compat.v1.GPUOptions(per_process_gpu_memory_fraction=0.6)
         sess = tf.compat.v1.Session(config=tf.compat.v1.ConfigProto(gpu_options=gpu_options, log_device_placement=False))
 
         with sess.as_default():
 
-            # Load the model
             print('Loading feature extraction model')
             facenet.load_model(FACENET_MODEL_PATH)
 
-            # Get input and output tensors
             images_placeholder =  tf.compat.v1.get_default_graph().get_tensor_by_name("input:0")
             embeddings =  tf.compat.v1.get_default_graph().get_tensor_by_name("embeddings:0")
             phase_train_placeholder =  tf.compat.v1.get_default_graph().get_tensor_by_name("phase_train:0")
@@ -60,17 +46,12 @@ def main():
 
             person_detected = collections.Counter()
 
-            # Lay hinh anh tu file cam
-            cap = cv2.VideoCapture('rtsp://raspberrypi.local:8554/cam')
+            cap = VideoStream(src=0).start()
 
             while (True):
-                # Doc tung frame
-                time.sleep(3)
-                ret, frame = cap.read()
-                if not ret:
-                    break
+                frame = cap.read()
                 frame = imutils.resize(frame, width=600)
-                frame = cv2.flip(frame, 1)
+                # frame = cv2.flip(frame, 1)
 
                 bounding_boxes, _ = align.detect_face.detect_face(frame, MINSIZE, pnet, rnet, onet, THRESHOLD, FACTOR)
 
@@ -109,11 +90,6 @@ def main():
 
                                 if best_class_probabilities > 0.8:
                                     probability_value = float(best_class_probabilities[0])
-                                    ref.push({
-                                        'Name': str(best_name),
-                                        'Probability': probability_value
-                                    })
-
                                     cv2.rectangle(frame, (bb[i][0], bb[i][1]), (bb[i][2], bb[i][3]), (0, 255, 0), 2)
                                     text_x = bb[i][0]
                                     text_y = bb[i][3] + 20
@@ -125,6 +101,7 @@ def main():
                                                 cv2.FONT_HERSHEY_COMPLEX_SMALL,
                                                 1, (255, 255, 255), thickness=1, lineType=2)
                                     person_detected[best_name] += 1
+
                                 else:
                                     name = "Unknown"
 
@@ -137,6 +114,3 @@ def main():
 
             cap.release()
             cv2.destroyAllWindows()
-
-
-main()

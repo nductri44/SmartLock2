@@ -3,7 +3,6 @@ from __future__ import division
 from __future__ import print_function
 
 import tensorflow as tf
-from imutils.video import VideoStream
 import argparse
 import facenet
 import imutils
@@ -12,6 +11,7 @@ import align.detect_face
 import numpy as np
 import cv2
 import collections
+
 
 while True:
     parser = argparse.ArgumentParser()
@@ -46,10 +46,10 @@ while True:
 
             person_detected = collections.Counter()
 
-            cap = VideoStream(src=0).start()
+            cap = cv2.VideoCapture(0)
 
             while (True):
-                frame = cap.read()
+                ret, frame = cap.read()
                 frame = imutils.resize(frame, width=600)
                 # frame = cv2.flip(frame, 1)
 
@@ -89,7 +89,6 @@ while True:
 
 
                                 if best_class_probabilities > 0.8:
-                                    probability_value = float(best_class_probabilities[0])
                                     cv2.rectangle(frame, (bb[i][0], bb[i][1]), (bb[i][2], bb[i][3]), (0, 255, 0), 2)
                                     text_x = bb[i][0]
                                     text_y = bb[i][3] + 20

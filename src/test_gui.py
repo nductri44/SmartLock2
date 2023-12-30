@@ -372,11 +372,6 @@ class PageDetectFinger(tk.Frame):
         def detect_finger():
             if get_fingerprint():
                 print("Detected #", finger.finger_id, "with confidence", finger.confidence)
-                print("Turning on...")
-                GPIO.output(RELAY_PIN, 1)
-                time.sleep(5)
-                print("Turning off...")
-                GPIO.output(RELAY_PIN, 0)
             else:
                 print("Finger not found")
 

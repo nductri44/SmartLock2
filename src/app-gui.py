@@ -732,7 +732,6 @@ class PageDetectFace(tk.Frame):
                 ret, frame = cap_detect.read()
 
                 if ret:
-                    # frame = cap.read()
                     frame = imutils.resize(frame, width=600)
                     frame = cv2.flip(frame, 1)
                     # rand_name = random.randint(0, 1000)

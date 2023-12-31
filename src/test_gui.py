@@ -220,7 +220,7 @@ class PageTwo(tk.Frame):
                                         border=0,
                                         cursor='hand2',
                                         text="New Fingerprint",
-                                        font=('Arial', 16, 'bold'), command=lambda: controller.show_frame("PageThree"))
+                                        font=('Arial', 16, 'bold'), command=lambda: controller.show_frame("PageTakeFinger"))
         self.buttonTakeFace.place(relx=0.5, rely=0.3, anchor='center')
 
         self.buttonTakeFace = tk.Button(self,
@@ -235,7 +235,7 @@ class PageTwo(tk.Frame):
                                         border=0,
                                         cursor='hand2',
                                         text="Detect Finger",
-                                        font=('Arial', 16, 'bold'), command=lambda: controller.show_frame("PageDetectFingert"))
+                                        font=('Arial', 16, 'bold'), command=lambda: controller.show_frame("PageDetectFinger"))
         self.buttonTakeFace.place(relx=0.5, rely=0.1, anchor='center')
 
 
@@ -513,7 +513,7 @@ class PageTakeFace(tk.Frame):
             global cam_on, cap
             stop_vid()
             cam_on = True
-            cap = cv2.VideoCapture(0)
+            cap = cv2.VideoCapture(1)
             display_frame()
 
         def stop_vid():
@@ -610,7 +610,7 @@ class PageDetectFace(tk.Frame):
 
                 if ret:
                     frame = imutils.resize(frame, width=600)
-                    frame = cv2.flip(frame, 1)
+                    # frame = cv2.flip(frame, 1)
                     bounding_boxes, _ = align.detect_face.detect_face(
                         frame, MINSIZE, pnet, rnet, onet, THRESHOLD, FACTOR)
                     
@@ -711,7 +711,7 @@ class PageDetectFace(tk.Frame):
 
                     # Convert captured image to photoimage
                     photo_image = ImageTk.PhotoImage(
-                        captured_image.resize((500, 300), Image.ANTIALIAS))
+                        captured_image.resize((800, 400), Image.ANTIALIAS))
 
                     # Displaying photoimage in the label
                     detect_widget.photo_image = photo_image
@@ -725,7 +725,7 @@ class PageDetectFace(tk.Frame):
             global cam_detect_on, cap_detect
             stop_detect()
             cam_detect_on = True
-            cap_detect = cv2.VideoCapture(0)
+            cap_detect = cv2.VideoCapture(1)
             detect_frame()
 
         

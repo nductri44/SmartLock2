@@ -1,4 +1,7 @@
-import pickle
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+
 import tkinter as tk
 from tkinter import font as tkfont
 from tkinter import messagebox, PhotoImage
@@ -6,8 +9,10 @@ from PIL import Image, ImageTk
 import cv2
 import os
 import pytz
+import pickle
 import imutils
 import time
+from time import sleep
 import serial
 import adafruit_fingerprint
 import RPi.GPIO as GPIO
@@ -16,6 +21,15 @@ import align.detect_face
 import facenet
 import tensorflow as tf
 import numpy as np
+from datetime import datetime
+import firebase_admin
+from firebase_admin import credentials, db
+
+cred = credentials.Certificate("D:\\Model\\face_recognition\\serviceAccountKey.json")
+firebase_admin.initialize_app(cred, {'databaseURL': 'https://facerecognition-49c2d-default-rtdb.asia-southeast1.firebasedatabase.app/'})
+
+positive_ref = db.reference('/face_positive')
+negative_ref = db.reference('/face_negative')
 
 
 RELAY_PIN = 23
@@ -325,7 +339,7 @@ class PageTakeFinger(tk.Frame):
             message == False
 
         label1 = tk.Label(
-            self, text="Enter your student code to register new fingerprint")
+            self, text="Enter your name to register new fingerprint")
         label1.place(relx=0.5, rely=0.1, anchor='center')
 
         student_code_entry = tk.Entry(self)
@@ -372,8 +386,17 @@ class PageDetectFinger(tk.Frame):
         def detect_finger():
             if get_fingerprint():
                 print("Detected #", finger.finger_id, "with confidence", finger.confidence)
+                messagebox.showinfo("Welcome", "Welcome home!")
+                print("Turning on...")
+                GPIO.output(RELAY_PIN, 1)
+                sleep(10)
+                print("Turning off...")
+                GPIO.output(RELAY_PIN, 0)
+                sleep(10)
+                GPIO.cleanup()
             else:
                 print("Finger not found")
+                messagebox.showinfo("Error", "Wrong fingerprint. Please try again.")
 
 
         # finger checkin
@@ -623,9 +646,19 @@ class PageDetectFace(tk.Frame):
                             best_name = class_names[best_class_indices[0]]
 
                             count_unknown += 1
-                            if best_class_probabilities > 0.7:
+                            if best_class_probabilities > 0.8:
                                 print('Name: {}, Probability: {}'.format(
                                     best_name, best_class_probabilities))
+                                probability_value = float(best_class_probabilities[0])
+                                date_time = datetime.now().strftime("%d%m%Y%H%M%S")
+                                positive_ref.push({
+                                    'Name': str(best_name),
+                                    'Probability': '{:.4f}'.format(probability_value),
+                                    'Detected_at': datetime.now().strftime("%d/%m/%Y, %H:%M:%S"),
+                                    'Datetime': date_time
+                                })
+                                image_path = 'D:\\Model\\flask_demo\\pythonlogin\\static\\face_images\\positive\\{}.jpg'.format(date_time)
+                                cv2.imwrite(image_path, frame)
                                 cv2.rectangle(frame, (bb[i][0], bb[i][1]), (bb[i][2], bb[i][3]), (0,
                                                                                                   255,
                                                                                                   0), 2)
@@ -635,6 +668,13 @@ class PageDetectFace(tk.Frame):
                                             (255, 255, 255), thickness=1, lineType=2)
                                 cv2.putText(frame, (str(round(best_class_probabilities[0], 3))), (text_x, text_y + 17), 
                                             (cv2.FONT_HERSHEY_COMPLEX_SMALL), 1, (255, 255, 255), thickness=1, lineType=2)
+                                print("Turning on...")
+                                GPIO.output(RELAY_PIN, 1)
+                                sleep(10)
+                                print("Turning off...")
+                                GPIO.output(RELAY_PIN, 0)
+                                sleep(10)
+                                GPIO.cleanup()
                                 if detect_time == 1:
                                     cv2.destroyAllWindows()
                                     time.sleep(5)
@@ -646,10 +686,20 @@ class PageDetectFace(tk.Frame):
                             else:
                                 print('Name: {}, Probability: {}'.format(
                                     best_name, best_class_probabilities))
+                                probability_value = float(best_class_probabilities[0])
+                                date_time = datetime.now().strftime("%d%m%Y%H%M%S")
+                                negative_ref.push({
+                                    'Name': 'Unknown',
+                                    'Probability': '{:.4f}'.format(probability_value),
+                                    'Detected_at': datetime.now().strftime("%d/%m/%Y, %H:%M:%S"),
+                                    'Datetime': date_time
+                                })
+                                image_path = 'D:\\Model\\flask_demo\\pythonlogin\\static\\face_images\\negative\\{}.jpg'.format(date_time)
+                                cv2.imwrite(image_path, frame)
                                 print(count_unknown)
                                 if count_unknown == 100:
                                     print('break')
-                                    # best_name = 'unknown'
+                                    best_name = 'unknown'
                                     cv2.destroyAllWindows()
                                     stop_detect()
                                     count_unknown = 0

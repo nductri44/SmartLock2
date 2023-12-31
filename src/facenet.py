@@ -326,7 +326,7 @@ def load_model(model, input_map=None):
       
         saver = tf.train.import_meta_graph(os.path.join(model_exp, meta_file), input_map=input_map)
         saver.restore(tf.get_default_session(), os.path.join(model_exp, ckpt_file))
-    
+        
 def get_model_filenames(model_dir):
     files = os.listdir(model_dir)
     meta_files = [s for s in files if s.endswith('.meta')]

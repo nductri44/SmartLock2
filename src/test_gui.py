@@ -370,6 +370,12 @@ class PageDetectFinger(tk.Frame):
         status = 'loading'
         self.controller = controller
 
+        RELAY_PIN = 23
+
+        GPIO.setwarnings(False)
+        GPIO.setmode(GPIO.BCM)
+        GPIO.setup(RELAY_PIN, GPIO.OUT)
+
         def get_fingerprint():
             print("Waiting for image...")
             while finger.get_image() != adafruit_fingerprint.OK:
@@ -598,6 +604,11 @@ class PageDetectFace(tk.Frame):
         global detect_time
         detect_time = 0
 
+        RELAY_PIN = 23
+        GPIO.setwarnings(False)
+        GPIO.setmode(GPIO.BCM)
+        GPIO.setup(RELAY_PIN, GPIO.OUT)
+
         
         def detect_frame():
             global cam_detect_on
@@ -674,8 +685,6 @@ class PageDetectFace(tk.Frame):
                                     sleep(10)
                                     print("Turning off...")
                                     GPIO.output(RELAY_PIN, 0)
-                                    sleep(10)
-                                    GPIO.cleanup()
                                     if detect_time == 1:
                                         cv2.destroyAllWindows()
                                         time.sleep(5)

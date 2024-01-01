@@ -2,32 +2,8 @@ import time
 import serial
 import adafruit_fingerprint
 import RPi.GPIO as GPIO
-import imutils
-from imutils.video import VideoStream
-import cv2
 import time
-from datetime import datetime
 
-import firebase_admin
-from firebase_admin import credentials, db
-
-cred = credentials.Certificate("/home/tri/SmartLock2/serviceAccountKey.json")
-firebase_admin.initialize_app(cred, {'databaseURL': 'https://facerecognition-49c2d-default-rtdb.asia-southeast1.firebasedatabase.app/'})
-
-positive_ref = db.reference('/finger_positive')
-negative_ref = db.reference('/finger_negative')
-
-RELAY_PIN = 23
-
-GPIO.setwarnings(False)
-GPIO.setmode(GPIO.BCM)
-GPIO.setup(RELAY_PIN, GPIO.OUT)
-
-MAX_CONSECUTIVE_FAILURES = 5
-DISABLE_DURATION = 30
-
-consecutive_failures = 0
-last_failure_time = 0
 
 # If using with Linux/Raspberry Pi and hardware UART:
 uart = serial.Serial("/dev/ttyS0", baudrate=57600, timeout=1)
@@ -222,44 +198,10 @@ while True:
     if c == "e":
         enroll_finger(get_num(finger.library_size))
     if c == "f":
-        cap  = VideoStream(src=0).start()
-        frame = cap.read()
-        frame = imutils.resize(frame, width=600)
-        frame = cv2.flip(frame, 1)
         if get_fingerprint():
             print("Detected #", finger.finger_id, "with confidence", finger.confidence)
-            date_time = datetime.now().strftime("%d%m%Y%H%M%S")
-            positive_ref.push({
-                'Finger_ID': str(finger.finger_id),
-                'Confidence': str(finger.confidence),
-                'Detected_at': datetime.now().strftime("%d/%m/%Y, %H:%M:%S"),
-                'Datetime': date_time
-            })
-            image_path = 'D:\\Model\\flask_demo\\pythonlogin\\static\\finger_images\\positive\\{}.jpg'.format(date_time)
-            cv2.imwrite(image_path, frame)
-            print("Turning on...")
-            GPIO.output(RELAY_PIN, 1)
-            time.sleep(5)
-            print("Turning off...")
-            GPIO.output(RELAY_PIN, 0)
-            consecutive_failures = 0
-            last_failure_time = 0
         else:
             print("Finger not found")
-            negative_ref.push({
-                'Confidence': str(finger.confidence),
-                'Detected_at': datetime.now().strftime("%d/%m/%Y, %H:%M:%S"),
-                'Datetime': date_time
-            })
-            image_path = 'D:\\Model\\flask_demo\\pythonlogin\\static\\finger_images\\positive\\{}.jpg'.format(date_time)
-            cv2.imwrite(image_path, frame)
-            consecutive_failures += 1
-
-        if consecutive_failures >= MAX_CONSECUTIVE_FAILURES:
-            print("Too many consecutive failures. Disabling for {} seconds.".format(DISABLE_DURATION))
-            last_failure_time = time.time()
-            consecutive_failures = 0
-            time.sleep(DISABLE_DURATION)
 
     if c == "d":
         if finger.delete_model(get_num(finger.library_size)) == adafruit_fingerprint.OK:

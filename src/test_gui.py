@@ -459,7 +459,7 @@ class PageTakeFace(tk.Frame):
 
             id = first_name_entry.get()
 
-            filepath = '/home/tri/SmartLock2/Capture' + id
+            filepath = '/home/tri/SmartLock2/Capture/' + id
 
             isExist = os.path.exists(filepath)
 

@@ -722,7 +722,7 @@ class PageDetectFace(tk.Frame):
                         # Configure image in the label
                         detect_widget.configure(image=photo_image)
 
-                detect_widget.after(10, detect_frame)
+                    detect_widget.after(10, detect_frame)
 
         def start_check_in():
             global cam_detect_on, cap_detect

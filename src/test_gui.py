@@ -513,7 +513,7 @@ class PageTakeFace(tk.Frame):
             global cam_on, cap
             stop_vid()
             cam_on = True
-            cap = cv2.VideoCapture(1)
+            cap = cv2.VideoCapture(0)
             display_frame()
 
         def stop_vid():
@@ -725,7 +725,7 @@ class PageDetectFace(tk.Frame):
             global cam_detect_on, cap_detect
             stop_detect()
             cam_detect_on = True
-            cap_detect = cv2.VideoCapture(1)
+            cap_detect = cv2.VideoCapture(0)
             detect_frame()
 
         

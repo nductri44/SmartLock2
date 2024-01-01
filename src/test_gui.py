@@ -475,8 +475,7 @@ class PageTakeFace(tk.Frame):
                 if ret:
                     opencv_image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGBA)
                     filename = '.'.join([str(num_of_images), 'jpg'])
-                    path = os.path.join(filepath, filename)
-                    cv2.imwrite(path, frame)
+                    path = os.path.join(filepath, filename)            
                     face = detector.detectMultiScale(
                         image=opencv_image, scaleFactor=1.1, minNeighbors=5)
                     for x, y, w, h in face:
@@ -486,6 +485,8 @@ class PageTakeFace(tk.Frame):
                                     cv2.FONT_HERSHEY_SIMPLEX, 0.8, (8, 238, 255))
                         cv2.putText(frame, str(str(num_of_images)+" images captured"),
                                     (x, y+h+20), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (8, 238, 255))
+                        new_img = frame[y:y+h, x:x+w]
+                        cv2.imwrite(path, new_img)
 
                     # Capture the latest frame and transform to image
                     captured_image = Image.fromarray(

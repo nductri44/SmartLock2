@@ -11,7 +11,7 @@ from datetime import datetime
 import firebase_admin
 from firebase_admin import credentials, db
 
-cred = credentials.Certificate("D:\\Model\\face_recognition\\serviceAccountKey.json")
+cred = credentials.Certificate("/home/tri/SmartLock2/serviceAccountKey.json")
 firebase_admin.initialize_app(cred, {'databaseURL': 'https://facerecognition-49c2d-default-rtdb.asia-southeast1.firebasedatabase.app/'})
 
 positive_ref = db.reference('/finger_positive')
@@ -29,12 +29,8 @@ DISABLE_DURATION = 30
 consecutive_failures = 0
 last_failure_time = 0
 
-# If using with a computer such as Linux/RaspberryPi, Mac, Windows with USB/serial converter:
-# uart = serial.Serial("/dev/ttyUSB0", baudrate=57600, timeout=1)
-
 # If using with Linux/Raspberry Pi and hardware UART:
 uart = serial.Serial("/dev/ttyS0", baudrate=57600, timeout=1)
-
 
 finger = adafruit_fingerprint.Adafruit_Fingerprint(uart)
 
@@ -53,47 +49,47 @@ def get_fingerprint():
     return True
 
 
-# def get_fingerprint_detail():
-#     print("Getting image...", end="")
-#     i = finger.get_image()
-#     if i == adafruit_fingerprint.OK:
-#         print("Image taken")
-#     else:
-#         if i == adafruit_fingerprint.NOFINGER:
-#             print("No finger detected")
-#         elif i == adafruit_fingerprint.IMAGEFAIL:
-#             print("Imaging error")
-#         else:
-#             print("Other error")
-#         return False
+def get_fingerprint_detail():
+    print("Getting image...", end="")
+    i = finger.get_image()
+    if i == adafruit_fingerprint.OK:
+        print("Image taken")
+    else:
+        if i == adafruit_fingerprint.NOFINGER:
+            print("No finger detected")
+        elif i == adafruit_fingerprint.IMAGEFAIL:
+            print("Imaging error")
+        else:
+            print("Other error")
+        return False
 
-#     print("Templating...", end="")
-#     i = finger.image_2_tz(1)
-#     if i == adafruit_fingerprint.OK:
-#         print("Templated")
-#     else:
-#         if i == adafruit_fingerprint.IMAGEMESS:
-#             print("Image too messy")
-#         elif i == adafruit_fingerprint.FEATUREFAIL:
-#             print("Could not identify features")
-#         elif i == adafruit_fingerprint.INVALIDIMAGE:
-#             print("Image invalid")
-#         else:
-#             print("Other error")
-#         return False
+    print("Templating...", end="")
+    i = finger.image_2_tz(1)
+    if i == adafruit_fingerprint.OK:
+        print("Templated")
+    else:
+        if i == adafruit_fingerprint.IMAGEMESS:
+            print("Image too messy")
+        elif i == adafruit_fingerprint.FEATUREFAIL:
+            print("Could not identify features")
+        elif i == adafruit_fingerprint.INVALIDIMAGE:
+            print("Image invalid")
+        else:
+            print("Other error")
+        return False
 
-#     print("Searching...", end="")
-#     i = finger.finger_fast_search()
+    print("Searching...", end="")
+    i = finger.finger_fast_search()
 
-#     if i == adafruit_fingerprint.OK:
-#         print("Found fingerprint!")
-#         return True
-#     else:
-#         if i == adafruit_fingerprint.NOTFOUND:
-#             print("No match found")
-#         else:
-#             print("Other error")
-#         return False
+    if i == adafruit_fingerprint.OK:
+        print("Found fingerprint!")
+        return True
+    else:
+        if i == adafruit_fingerprint.NOTFOUND:
+            print("No match found")
+        else:
+            print("Other error")
+        return False
 
 
 def enroll_finger(location):
@@ -165,32 +161,32 @@ def enroll_finger(location):
     return True
 
 
-# def save_fingerprint_image(filename):
-#     while finger.get_image():
-#         pass
+def save_fingerprint_image(filename):
+    while finger.get_image():
+        pass
 
-#     from PIL import Image
+    from PIL import Image
 
-#     img = Image.new("L", (256, 288), "white")
-#     pixeldata = img.load()
-#     mask = 0b00001111
-#     result = finger.get_fpdata(sensorbuffer="image")
+    img = Image.new("L", (256, 288), "white")
+    pixeldata = img.load()
+    mask = 0b00001111
+    result = finger.get_fpdata(sensorbuffer="image")
 
-#     x = 0
-#     y = 0
-#     for i in range(len(result)):
-#         pixeldata[x, y] = (int(result[i]) >> 4) * 17
-#         x += 1
-#         pixeldata[x, y] = (int(result[i]) & mask) * 17
-#         if x == 255:
-#             x = 0
-#             y += 1
-#         else:
-#             x += 1
+    x = 0
+    y = 0
+    for i in range(len(result)):
+        pixeldata[x, y] = (int(result[i]) >> 4) * 17
+        x += 1
+        pixeldata[x, y] = (int(result[i]) & mask) * 17
+        if x == 255:
+            x = 0
+            y += 1
+        else:
+            x += 1
 
-#     if not img.save(filename):
-#         return True
-#     return False
+    if not img.save(filename):
+        return True
+    return False
 
 
 def get_num(max_number):
@@ -270,11 +266,11 @@ while True:
             print("Deleted!")
         else:
             print("Failed to delete")
-    # if c == "s":
-    #     if save_fingerprint_image("fingerprint.png"):
-    #         print("Fingerprint image saved")
-    #     else:
-    #         print("Failed to save fingerprint image")
+    if c == "s":
+        if save_fingerprint_image("fingerprint.png"):
+            print("Fingerprint image saved")
+        else:
+            print("Failed to save fingerprint image")
     if c == "r":
         if finger.empty_library() == adafruit_fingerprint.OK:
             print("Library empty!")

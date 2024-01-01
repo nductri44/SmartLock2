@@ -392,8 +392,6 @@ class PageDetectFinger(tk.Frame):
                 sleep(10)
                 print("Turning off...")
                 GPIO.output(RELAY_PIN, 0)
-                sleep(10)
-                GPIO.cleanup()
             else:
                 print("Finger not found")
                 messagebox.showinfo("Error", "Wrong fingerprint. Please try again.")

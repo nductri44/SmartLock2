@@ -610,6 +610,7 @@ class PageDetectFace(tk.Frame):
 
                 if ret:
                     frame = imutils.resize(frame, width=600)
+                    cv2.imwrite("test.png", frame)
                     # frame = cv2.flip(frame, 1)
                     bounding_boxes, _ = align.detect_face.detect_face(
                         frame, MINSIZE, pnet, rnet, onet, THRESHOLD, FACTOR)
@@ -629,7 +630,6 @@ class PageDetectFace(tk.Frame):
                         if (bb[i][3] - bb[i][1]) / frame.shape[0] > 0.25:
                             cropped = frame[bb[i][1]:bb[i]
                                             [3], bb[i][0]:bb[i][2], :]
-                            cv2.imwrite('test-image.png', cropped)
                             scaled = cv2.resize(
                                 cropped, (INPUT_IMAGE_SIZE, INPUT_IMAGE_SIZE), interpolation=(cv2.INTER_CUBIC))
                             scaled = facenet.prewhiten(scaled)

@@ -488,29 +488,29 @@ class PageTakeFace(tk.Frame):
                         new_img = frame[y:y+h, x:x+w]
                         cv2.imwrite(path, new_img)
 
-                    # Capture the latest frame and transform to image
-                    captured_image = Image.fromarray(
-                        cv2.cvtColor(frame, cv2.COLOR_BGR2RGBA))
+                        # Capture the latest frame and transform to image
+                        captured_image = Image.fromarray(
+                            cv2.cvtColor(new_img, cv2.COLOR_BGR2RGBA))
 
-                    # Convert captured image to photoimage
-                    photo_image = ImageTk.PhotoImage(
-                        captured_image.resize((500, 300), Image.ANTIALIAS))
+                        # Convert captured image to photoimage
+                        photo_image = ImageTk.PhotoImage(
+                            captured_image.resize((500, 300), Image.ANTIALIAS))
 
-                    # Displaying photoimage in the label
-                    label_widget.photo_image = photo_image
+                        # Displaying photoimage in the label
+                        label_widget.photo_image = photo_image
 
-                    # Configure image in the label
-                    label_widget.configure(image=photo_image)
+                        # Configure image in the label
+                        label_widget.configure(image=photo_image)
 
-                    # Repeat the same process after every 10 seconds
-                    num_of_images += 1
+                        # Repeat the same process after every 10 seconds
+                        num_of_images += 1
 
-                    if num_of_images == 21:
-                        stop_vid()
-                        num_of_images = 0
-                        messagebox.showinfo(
-                            "INSTRUCTIONS", "We captured 20 pic of your Face.")
-                        return 'ok'
+                        if num_of_images == 21:
+                            stop_vid()
+                            num_of_images = 0
+                            messagebox.showinfo(
+                                "INSTRUCTIONS", "We captured 20 pic of your Face.")
+                            return 'ok'
 
                 label_widget.after(10, display_frame)
 

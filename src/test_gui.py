@@ -29,14 +29,10 @@ cred = credentials.Certificate("/home/tri/SmartLock2/serviceAccountKey.json")
 firebase_admin.initialize_app(cred, {'databaseURL': 'https://facerecognition-49c2d-default-rtdb.asia-southeast1.firebasedatabase.app/'})
 
 positive_ref = db.reference('/face_positive')
-negative_ref = db.reference('/face_negative')
+negative_ref = db.reference('/face_negative')\
 
-
-RELAY_PIN = 23
-
-GPIO.setwarnings(False)
-GPIO.setmode(GPIO.BCM)
-GPIO.setup(RELAY_PIN, GPIO.OUT)
+finger_positive = db.reference('/finger_positive')
+finger_negative = db.reference('/finger_negative')
 
 names = set()
 utc = pytz.UTC
@@ -322,7 +318,8 @@ class PageTakeFinger(tk.Frame):
             i = -1
             while (i > max_number - 1) or (i < 0):
                 try:
-                    i = int(input("Enter ID # from 0-{}: ".format(max_number - 1)))
+                    # i = int(input("Enter ID # from 0-{}: ".format(max_number - 1)))
+                    i = int(student_code_entry.get())
                 except ValueError:
                     pass
             return i
@@ -392,6 +389,13 @@ class PageDetectFinger(tk.Frame):
         def detect_finger():
             if get_fingerprint():
                 print("Detected #", finger.finger_id, "with confidence", finger.confidence)
+                date_time = datetime.now().strftime("%d%m%Y%H%M%S")
+                finger_positive.push({
+                    'Finger_ID': str(finger.finger_id),
+                    'Confidence': '{:.4f}'.format(finger.confidence),
+                    'Detected_at': datetime.now().strftime("%d/%m/%Y, %H:%M:%S"),
+                    'Datetime': date_time
+                })
                 messagebox.showinfo("Welcome", "Welcome home!")
                 print("Turning on...")
                 GPIO.output(RELAY_PIN, 1)
@@ -400,6 +404,13 @@ class PageDetectFinger(tk.Frame):
                 GPIO.output(RELAY_PIN, 0)
             else:
                 print("Finger not found")
+                date_time = datetime.now().strftime("%d%m%Y%H%M%S")
+                finger_negative.push({
+                    'Finger_ID': "Unknown",
+                    'Confidence': '{:.4f}'.format(finger.confidence),
+                    'Detected_at': datetime.now().strftime("%d/%m/%Y, %H:%M:%S"),
+                    'Datetime': date_time
+                })
                 messagebox.showinfo("Error", "Wrong fingerprint. Please try again.")
 
 
@@ -619,7 +630,6 @@ class PageDetectFace(tk.Frame):
 
                 if ret:
                     frame = imutils.resize(frame, width=600)
-                    # frame = cv2.flip(frame, 1)
 
                     bounding_boxes, _ = align.detect_face.detect_face(frame, MINSIZE, pnet, rnet, onet, THRESHOLD, FACTOR)
                     

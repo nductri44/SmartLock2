@@ -25,7 +25,7 @@ from datetime import datetime
 import firebase_admin
 from firebase_admin import credentials, db
 
-cred = credentials.Certificate("home/tri/SmartLock2/serviceAccountKey.json")
+cred = credentials.Certificate("/home/tri/SmartLock2/serviceAccountKey.json")
 firebase_admin.initialize_app(cred, {'databaseURL': 'https://facerecognition-49c2d-default-rtdb.asia-southeast1.firebasedatabase.app/'})
 
 positive_ref = db.reference('/face_positive')
@@ -455,7 +455,7 @@ class PageTakeFace(tk.Frame):
 
             id = first_name_entry.get()
 
-            filepath = 'home/tri/SmartLock2/Capture' + id
+            filepath = '/home/tri/SmartLock2/Capture' + id
 
             isExist = os.path.exists(filepath)
 
@@ -657,7 +657,7 @@ class PageDetectFace(tk.Frame):
                                     'Detected_at': datetime.now().strftime("%d/%m/%Y, %H:%M:%S"),
                                     'Datetime': date_time
                                 })
-                                image_path = 'home/tri/Flask/face_images/positive/{}.jpg'.format(date_time)
+                                image_path = '/home/tri/Flask/face_images/positive/{}.jpg'.format(date_time)
                                 cv2.imwrite(image_path, frame)
                                 cv2.rectangle(frame, (bb[i][0], bb[i][1]), (bb[i][2], bb[i][3]), (0,
                                                                                                   255,
@@ -694,7 +694,7 @@ class PageDetectFace(tk.Frame):
                                     'Detected_at': datetime.now().strftime("%d/%m/%Y, %H:%M:%S"),
                                     'Datetime': date_time
                                 })
-                                image_path = 'home/tri/Flask/face_images/negative/{}.jpg'.format(date_time)
+                                image_path = '/home/tri/Flask/face_images/negativegit/{}.jpg'.format(date_time)
                                 cv2.imwrite(image_path, frame)
                                 print(count_unknown)
                                 if count_unknown == 100:

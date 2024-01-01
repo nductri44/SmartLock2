@@ -611,7 +611,7 @@ class PageDetectFace(tk.Frame):
                 if ret:
                     frame = imutils.resize(frame, width=600)
                     # frame = cv2.flip(frame, 1)
-                    
+
                     bounding_boxes, _ = align.detect_face.detect_face(
                         frame, MINSIZE, pnet, rnet, onet, THRESHOLD, FACTOR)
                     
@@ -711,7 +711,7 @@ class PageDetectFace(tk.Frame):
 
                     # Convert captured image to photoimage
                     photo_image = ImageTk.PhotoImage(
-                        captured_image.resize((800, 400), Image.ANTIALIAS))
+                        captured_image.resize((500, 300), Image.ANTIALIAS))
 
                     # Displaying photoimage in the label
                     detect_widget.photo_image = photo_image

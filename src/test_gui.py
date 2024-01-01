@@ -250,40 +250,51 @@ class PageTakeFinger(tk.Frame):
             for fingerimg in range(1, 3):
                 if fingerimg == 1:
                     print("Place finger on sensor...", end="")
+                    messagebox.showinfo("Notice", "Place finger on sensor")
                 else:
                     print("Place same finger again...", end="")
+                    messagebox.showinfo("Notice", "Place same finger again")
 
                 while True:
                     i = finger.get_image()
                     if i == adafruit_fingerprint.OK:
                         print("Image taken")
+                        messagebox.showinfo("Notice", "Image taken")
                         break
                     if i == adafruit_fingerprint.NOFINGER:
                         print(".", end="")
                     elif i == adafruit_fingerprint.IMAGEFAIL:
                         print("Imaging error")
+                        messagebox.showinfo("Error", "Imaging error")
                         return False
                     else:
                         print("Other error")
+                        messagebox.showinfo("Error", "Other error")
                         return False
 
                 print("Templating...", end="")
                 i = finger.image_2_tz(fingerimg)
                 if i == adafruit_fingerprint.OK:
                     print("Templated")
+                    messagebox.showinfo("Notice", "Finger taken success")
                 else:
                     if i == adafruit_fingerprint.IMAGEMESS:
                         print("Image too messy")
+                        messagebox.showinfo("Error", "Image too messy")
                     elif i == adafruit_fingerprint.FEATUREFAIL:
                         print("Could not identify features")
+                        messagebox.showinfo("Error", "Could not identify features")
                     elif i == adafruit_fingerprint.INVALIDIMAGE:
                         print("Image invalid")
+                        messagebox.showinfo("Error", "Image invalid")
                     else:
                         print("Other error")
+                        messagebox.showinfo("Error", "Other error")
                     return False
 
                 if fingerimg == 1:
                     print("Remove finger")
+                    messagebox.showinfo("Error", "Remove finger")
                     time.sleep(1)
                     while i != adafruit_fingerprint.NOFINGER:
                         i = finger.get_image()
@@ -292,9 +303,11 @@ class PageTakeFinger(tk.Frame):
             i = finger.create_model()
             if i == adafruit_fingerprint.OK:
                 print("Created")
+                messagebox.showinfo("Notice", "Finger created")
             else:
                 if i == adafruit_fingerprint.ENROLLMISMATCH:
                     print("Prints did not match")
+                    messagebox.showinfo("Error", "Prints did not match")
                 else:
                     print("Other error")
                 return False
@@ -303,6 +316,7 @@ class PageTakeFinger(tk.Frame):
             i = finger.store_model(location)
             if i == adafruit_fingerprint.OK:
                 print("Stored")
+                messagebox.showinfo("Notice", "Finger stored")
             else:
                 if i == adafruit_fingerprint.BADLOCATION:
                     print("Bad storage location")

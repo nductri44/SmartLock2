@@ -276,7 +276,6 @@ class PageTakeFinger(tk.Frame):
                 i = finger.image_2_tz(fingerimg)
                 if i == adafruit_fingerprint.OK:
                     print("Templated")
-                    messagebox.showinfo("Notice", "Finger taken success")
                 else:
                     if i == adafruit_fingerprint.IMAGEMESS:
                         print("Image too messy")
@@ -303,7 +302,6 @@ class PageTakeFinger(tk.Frame):
             i = finger.create_model()
             if i == adafruit_fingerprint.OK:
                 print("Created")
-                messagebox.showinfo("Notice", "Finger created")
             else:
                 if i == adafruit_fingerprint.ENROLLMISMATCH:
                     print("Prints did not match")
@@ -316,7 +314,7 @@ class PageTakeFinger(tk.Frame):
             i = finger.store_model(location)
             if i == adafruit_fingerprint.OK:
                 print("Stored")
-                messagebox.showinfo("Notice", "Finger stored")
+                messagebox.showinfo("Notice", "Finger saved")
             else:
                 if i == adafruit_fingerprint.BADLOCATION:
                     print("Bad storage location")

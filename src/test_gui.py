@@ -496,12 +496,11 @@ class PageTakeFace(tk.Frame):
                 ret, frame = cap.read()
 
                 if ret:
-                    opencv_image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGBA)
+                    grayimg = cv2.cvtColor(frame, cv2.COLOR_BGR2RGBA)
                     filename = '.'.join([str(num_of_images), 'jpg'])
                     path = os.path.join(filepath, filename)
-                    cv2.imwrite(path, frame)
                     face = detector.detectMultiScale(
-                        image=opencv_image, scaleFactor=1.1, minNeighbors=5)
+                        grayimg, scaleFactor=1.1, minNeighbors=5)
                     for x, y, w, h in face:
                         cv2.rectangle(frame, (x, y),
                                       (x+w, y+h), (8, 238, 255), 2)
@@ -509,6 +508,10 @@ class PageTakeFace(tk.Frame):
                                     cv2.FONT_HERSHEY_SIMPLEX, 0.8, (8, 238, 255))
                         cv2.putText(frame, str(str(num_of_images)+" images captured"),
                                     (x, y+h+20), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (8, 238, 255))
+                        new_img = frame[y:y+h, x:x+w]
+
+                        cv2.imwrite(path, new_img)
+                        num_of_images += 1
 
                     # Capture the latest frame and transform to image
                     captured_image = Image.fromarray(
@@ -523,10 +526,7 @@ class PageTakeFace(tk.Frame):
 
                     # Configure image in the label
                     label_widget.configure(image=photo_image)
-
-                    # Repeat the same process after every 10 seconds
-                    num_of_images += 1
-
+                    
                     if num_of_images == 21:
                         stop_vid()
                         num_of_images = 0

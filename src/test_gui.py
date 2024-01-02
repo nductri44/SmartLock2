@@ -647,111 +647,107 @@ class PageDetectFace(tk.Frame):
                     
                     faces_found = bounding_boxes.shape[0]
 
-                    if faces_found > 1:
-                        cv2.putText(frame, "Only one face", (0, 100), cv2.FONT_HERSHEY_COMPLEX_SMALL,
-                                    1, (255, 255, 255), thickness=1, lineType=2)
-                    elif faces_found > 0:
-                        det = bounding_boxes[:, 0:4]
-                        bb = np.zeros((faces_found, 4), dtype=(np.int32))
-                        for i in range(faces_found):
-                            bb[i][0] = det[i][0]
-                            bb[i][1] = det[i][1]
-                            bb[i][2] = det[i][2]
-                            bb[i][3] = det[i][3]
-                            print(bb[i][3]-bb[i][1])
-                            print(frame.shape[0])
-                            print((bb[i][3]-bb[i][1])/frame.shape[0])
-                            if (bb[i][3]-bb[i][1])/frame.shape[0]>0.25:
-                                cropped = frame[bb[i][1]:bb[i][3], bb[i][0]:bb[i][2], :]
-                                scaled = cv2.resize(
-                                    cropped, (INPUT_IMAGE_SIZE, INPUT_IMAGE_SIZE), interpolation=(cv2.INTER_CUBIC))
-                                scaled = facenet.prewhiten(scaled)
-                                scaled_reshape = scaled.reshape(
-                                    -1, INPUT_IMAGE_SIZE, INPUT_IMAGE_SIZE, 3)
-                                feed_dict = {
-                                    images_placeholder: scaled_reshape, phase_train_placeholder: False}
-                                emb_array = sess.run(
-                                    embeddings, feed_dict=feed_dict)
-                                predictions = model.predict_proba(emb_array)
-                                best_class_indices = np.argmax(
-                                    predictions, axis=1)
-                                best_class_probabilities = predictions[(
-                                    np.arange(len(best_class_indices)), best_class_indices)]
-                                best_name = class_names[best_class_indices[0]]
+                    det = bounding_boxes[:, 0:4]
+                    bb = np.zeros((faces_found, 4), dtype=(np.int32))
+                    for i in range(faces_found):
+                        bb[i][0] = det[i][0]
+                        bb[i][1] = det[i][1]
+                        bb[i][2] = det[i][2]
+                        bb[i][3] = det[i][3]
+                        print(bb[i][3]-bb[i][1])
+                        print(frame.shape[0])
+                        print((bb[i][3]-bb[i][1])/frame.shape[0])
+                        if (bb[i][3]-bb[i][1])/frame.shape[0]>0.25:
+                            cropped = frame[bb[i][1]:bb[i][3], bb[i][0]:bb[i][2], :]
+                            scaled = cv2.resize(
+                                cropped, (INPUT_IMAGE_SIZE, INPUT_IMAGE_SIZE), interpolation=(cv2.INTER_CUBIC))
+                            scaled = facenet.prewhiten(scaled)
+                            scaled_reshape = scaled.reshape(
+                                -1, INPUT_IMAGE_SIZE, INPUT_IMAGE_SIZE, 3)
+                            feed_dict = {
+                                images_placeholder: scaled_reshape, phase_train_placeholder: False}
+                            emb_array = sess.run(
+                                embeddings, feed_dict=feed_dict)
+                            predictions = model.predict_proba(emb_array)
+                            best_class_indices = np.argmax(
+                                predictions, axis=1)
+                            best_class_probabilities = predictions[(
+                                np.arange(len(best_class_indices)), best_class_indices)]
+                            best_name = class_names[best_class_indices[0]]
 
-                                count_unknown += 1
-                                if best_class_probabilities > 0.8:
-                                    print('Name: {}, Probability: {}'.format(
-                                        best_name, best_class_probabilities))
-                                    probability_value = float(best_class_probabilities[0])
-                                    date_time = datetime.now().strftime("%d%m%Y%H%M%S")
-                                    positive_ref.push({
-                                        'Name': str(best_name),
-                                        'Probability': '{:.4f}'.format(probability_value),
-                                        'Detected_at': datetime.now().strftime("%d/%m/%Y, %H:%M:%S"),
-                                        'Datetime': date_time
-                                    })
-                                    image_path = '/home/tri/Flask/face_images/positive/{}.jpg'.format(date_time)
-                                    cv2.imwrite(image_path, frame)
-                                    cv2.rectangle(frame, (bb[i][0], bb[i][1]), (bb[i][2], bb[i][3]), (0,
-                                                                                                    255,
-                                                                                                    0), 2)
-                                    text_x = bb[i][0]
-                                    text_y = bb[i][3] + 20
-                                    cv2.putText(frame, best_name, (text_x, text_y), (cv2.FONT_HERSHEY_COMPLEX_SMALL), 1,
-                                                (255, 255, 255), thickness=1, lineType=2)
-                                    cv2.putText(frame, (str(round(best_class_probabilities[0], 3))), (text_x, text_y + 17), 
-                                                (cv2.FONT_HERSHEY_COMPLEX_SMALL), 1, (255, 255, 255), thickness=1, lineType=2)
-                                    print("Turning on...")
-                                    GPIO.output(RELAY_PIN, 1)
-                                    sleep(10)
-                                    print("Turning off...")
-                                    GPIO.output(RELAY_PIN, 0)
-                                    if detect_time == 1:
-                                        cv2.destroyAllWindows()
-                                        time.sleep(5)
-                                        messagebox.showinfo("Welcome", "Welcome home!")
-                                        stop_detect()
-                                        detect_time = 0
-                                        return best_name
-                                    detect_time += 1
-                                else:
-                                    print('Name: {}, Probability: {}'.format(
-                                        best_name, best_class_probabilities))
-                                    probability_value = float(best_class_probabilities[0])
-                                    date_time = datetime.now().strftime("%d%m%Y%H%M%S")
-                                    negative_ref.push({
-                                        'Name': 'Unknown',
-                                        'Probability': '{:.4f}'.format(probability_value),
-                                        'Detected_at': datetime.now().strftime("%d/%m/%Y, %H:%M:%S"),
-                                        'Datetime': date_time
-                                    })
-                                    image_path = '/home/tri/Flask/face_images/negativegit/{}.jpg'.format(date_time)
-                                    cv2.imwrite(image_path, frame)
-                                    print(count_unknown)
-                                    if count_unknown == 100:
-                                        print('break')
-                                        best_name = 'unknown'
-                                        cv2.destroyAllWindows()
-                                        stop_detect()
-                                        count_unknown = 0
-                                        return best_name
+                            count_unknown += 1
+                            if best_class_probabilities > 0.8:
+                                print('Name: {}, Probability: {}'.format(
+                                    best_name, best_class_probabilities))
+                                probability_value = float(best_class_probabilities[0])
+                                date_time = datetime.now().strftime("%d%m%Y%H%M%S")
+                                positive_ref.push({
+                                    'Name': str(best_name),
+                                    'Probability': '{:.4f}'.format(probability_value),
+                                    'Detected_at': datetime.now().strftime("%d/%m/%Y, %H:%M:%S"),
+                                    'Datetime': date_time
+                                })
+                                image_path = '/home/tri/Flask/face_images/positive/{}.jpg'.format(date_time)
+                                cv2.imwrite(image_path, frame)
+                                cv2.rectangle(frame, (bb[i][0], bb[i][1]), (bb[i][2], bb[i][3]), (0,
+                                                                                                255,
+                                                                                                0), 2)
+                                text_x = bb[i][0]
+                                text_y = bb[i][3] + 20
+                                cv2.putText(frame, best_name, (text_x, text_y), (cv2.FONT_HERSHEY_COMPLEX_SMALL), 1,
+                                            (255, 255, 255), thickness=1, lineType=2)
+                                cv2.putText(frame, (str(round(best_class_probabilities[0], 3))), (text_x, text_y + 17), 
+                                            (cv2.FONT_HERSHEY_COMPLEX_SMALL), 1, (255, 255, 255), thickness=1, lineType=2)
+                                print("Turning on...")
+                                GPIO.output(RELAY_PIN, 1)
+                                sleep(10)
+                                print("Turning off...")
+                                GPIO.output(RELAY_PIN, 0)
+                                if detect_time == 1:
+                                    cv2.destroyAllWindows()
+                                    time.sleep(5)
+                                    messagebox.showinfo("Welcome", "Welcome home!")
+                                    stop_detect()
+                                    detect_time = 0
+                                    return best_name
+                                detect_time += 1
+                            else:
+                                print('Name: {}, Probability: {}'.format(
+                                    best_name, best_class_probabilities))
+                                probability_value = float(best_class_probabilities[0])
+                                date_time = datetime.now().strftime("%d%m%Y%H%M%S")
+                                negative_ref.push({
+                                    'Name': 'Unknown',
+                                    'Probability': '{:.4f}'.format(probability_value),
+                                    'Detected_at': datetime.now().strftime("%d/%m/%Y, %H:%M:%S"),
+                                    'Datetime': date_time
+                                })
+                                image_path = '/home/tri/Flask/face_images/negativegit/{}.jpg'.format(date_time)
+                                cv2.imwrite(image_path, frame)
+                                print(count_unknown)
+                                if count_unknown == 100:
+                                    print('break')
+                                    best_name = 'unknown'
+                                    cv2.destroyAllWindows()
+                                    stop_detect()
+                                    count_unknown = 0
+                                    return best_name
 
-                        # Capture the latest frame and transform to image
-                        captured_image = Image.fromarray(
-                            cv2.cvtColor(frame, cv2.COLOR_BGR2RGBA))
+                    # Capture the latest frame and transform to image
+                    captured_image = Image.fromarray(
+                        cv2.cvtColor(frame, cv2.COLOR_BGR2RGBA))
 
-                        # Convert captured image to photoimage
-                        photo_image = ImageTk.PhotoImage(
-                            captured_image.resize((500, 300), Image.ANTIALIAS))
+                    # Convert captured image to photoimage
+                    photo_image = ImageTk.PhotoImage(
+                        captured_image.resize((500, 300), Image.ANTIALIAS))
 
-                        # Displaying photoimage in the label
-                        detect_widget.photo_image = photo_image
+                    # Displaying photoimage in the label
+                    detect_widget.photo_image = photo_image
 
-                        # Configure image in the label
-                        detect_widget.configure(image=photo_image)
+                    # Configure image in the label
+                    detect_widget.configure(image=photo_image)
 
-                    detect_widget.after(10, detect_frame)
+                detect_widget.after(10, detect_frame)
 
         def start_check_in():
             global cam_detect_on, cap_detect
